@@ -7,15 +7,11 @@
 pip install prance openapi-spec-validator
 """
 
-import argparse
 import json
-import logging, logging.config
-import os
-import textwrap
+import logging
 from collections import defaultdict
 
 from prance import ResolvingParser
-import yaml
 
 logger = logging.getLogger(__name__)
 
