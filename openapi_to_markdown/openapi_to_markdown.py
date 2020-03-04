@@ -142,31 +142,3 @@ def _detail_response_info(endpoint: dict) -> str:
     result = ""
     for code, response in endpoint.get("responses", {}).items():
         result += f"#### {code}: {response['description']} "
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--log-level', default=os.getenv('LOGGING_LEVEL', 'INFO'))
-    parser.add_argument('--log-config', default=os.getenv('LOGGING_CONFIG', 'logging.yaml'))
-    # parser.add_argument('-i', '--int-data', type=int, default=0, help='')
-    # parser.add_argument('-b', '--bool-data', action='store_true', help='')
-    # parser.add_argument('-c', '--counter', type=int, const=50, nargs='?', help='')
-    # parser.add_argument('userid', type=int, help='')
-    parser.add_argument('filename', type=str, help='')
-    args = parser.parse_args()
-
-    logging.basicConfig(level=args.log_level)
-    if args.log_config and os.path.isfile(args.log_config):
-        logging.config.dictConfig(yaml.safe_load(open(args.log_config)))
-
-    parser = ResolvingParser(args.filename)
-    endpoints = retrieve_endpoint(parser.specification)
-    summary = get_summary_info(endpoints)
-    print(summary)
-    detail = get_detail_info(endpoints)
-    print(detail)
-
-
-if __name__ == '__main__':
-    main()
-
