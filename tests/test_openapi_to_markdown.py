@@ -2,23 +2,128 @@
 
 """Tests for `openapi_to_markdown` package."""
 
+import json
+import textwrap
+
 import pytest
 
 
-from openapi_to_markdown import openapi_to_markdown
+@pytest.fixture()
+def simple_property():
+    return json.loads(r"""
+    {
+      "result": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "failed"
+        ],
+        "description": "API result",
+        "example": "ok"
+      },
+      "message": {
+        "type": "string",
+        "description": "detailed message",
+        "example": "success"
+      }
+    }
+    """)
 
 
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
+def test_simple_property(simple_property):
+    from openapi_to_markdown.openapi_to_markdown import _property_str
 
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get('https://github.com/audreyr/cookiecutter-pypackage')
+    r = _property_str(simple_property)
+    assert r == textwrap.dedent("""
+    {
+      "result | API result": "string | ['ok', 'failed']",
+      "message | detailed message": "string"
+    }
+    """).strip()
 
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+@pytest.fixture()
+def array_property():
+    return json.loads(r"""
+    {
+      "analysis": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "description of string array"
+      }
+    }
+    """)
+
+
+def test_array_property(array_property):
+    from openapi_to_markdown.openapi_to_markdown import _property_str
+
+    r = _property_str(array_property)
+    assert r == textwrap.dedent("""
+    {
+      "analysis | description of string array": [
+        "string"
+      ]
+    }
+    """).strip()
+
+
+@pytest.fixture()
+def array_object_property():
+    return json.loads(r"""
+    {
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "object's id"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "items' token list"
+            }
+          }
+        },
+        "description": "results bra bra"
+      },
+      "message": {
+        "type": "string",
+        "description": "Additional message",
+        "example": "success"
+      }
+    }
+    """)
+
+
+def test_array_object_property(array_object_property):
+    from openapi_to_markdown.openapi_to_markdown import _property_str
+
+    r = _property_str(array_object_property)
+    assert r == textwrap.dedent("""
+    {
+      "results | results bra bra": [
+        {
+          "id | object's id": "string",
+          "items | items' token list": [
+            {
+              "token": "string"
+            }
+          ]
+        }
+      ],
+      "message | Additional message": "string"
+    }
+    """).strip()

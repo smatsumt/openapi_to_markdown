@@ -10,6 +10,7 @@ pip install prance openapi-spec-validator
 import json
 import logging
 from collections import defaultdict
+from typing import Any
 
 from prance import ResolvingParser
 
@@ -122,19 +123,55 @@ name | in | required | description | schema
 
 
 def _detail_request_info(endpoint: dict) -> str:
-    # return str(endpoint.get("parameters", ""))
+    """ Generate Request info in detail section """
     header = DETAIL_REQUEST_HEADER
     param_str = [_detail_request_param(p) for p in endpoint.get("parameters", [])]
     return header + "\n".join(param_str)
 
 
 def _detail_request_param(param: dict) -> str:
+    """ Generate Request parameter info in detail section """
     return f"{param['name']} | {param['in']} | {param.get('required', False)} | {param.get('description', NO_DESC)} |" \
            f" {param.get('schema', NO_DESC)} "
 
 
 def _detail_response_info(endpoint: dict) -> str:
-    # return str(endpoint.get("responses", ""))
+    """ Generate Response info in detail section """
     result = ""
     for code, response in endpoint.get("responses", {}).items():
-        result += f"#### {code}: {response['description']} "
+        result += f"#### {code}: {response['description']} \n"
+        try:
+            res_props = response["content"]["application/json"]["schema"]["properties"]
+            result += f"```\n{_property_str(res_props)}\n```\n"
+        except KeyError:
+            pass
+    return result
+
+
+def _property_str(properties: dict) -> str:
+    """ Format "properties" object """
+    new_dict = dict([_property_str_visitor(k, v) for k, v in properties.items()])
+    return json.dumps(new_dict, ensure_ascii=False, indent=2)
+
+
+def _property_str_visitor(name: str, node: dict) -> (str, Any):
+    """ helper for _property_str """
+    key_parts = [name]
+    if "description" in node:
+        key_parts.append(node["description"])
+    key = " | ".join(key_parts)
+
+    if node["type"] == "object":
+        properties = node["properties"]
+        value = dict([_property_str_visitor(k, v) for k, v in properties.items()])
+        return key, value
+    elif node["type"] == "array":
+        items = node["items"]
+        value = [_property_str_visitor("", items)[1]]
+        return key, value
+    else:
+        value_parts = [node["type"]]
+        if "enum" in node:
+            value_parts.append(str(node["enum"]))
+        value = " | ".join(value_parts)
+        return key, value
