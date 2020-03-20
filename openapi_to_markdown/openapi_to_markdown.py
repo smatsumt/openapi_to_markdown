@@ -157,10 +157,23 @@ def _property_str(properties: dict) -> str:
 def _property_str_visitor(name: str, node: dict) -> (str, Any):
     """ helper for _property_str """
     key_parts = [name]
+
+    # allOf branch
+    if "allOf" in node:
+        parts = [_property_str_visitor("", x) for x in node["allOf"]]
+        key = name
+        value = {}
+        for k, v in parts:
+            key += k
+            value.update(v)
+        return key, value
+
+    # object key creation
     if "description" in node:
         key_parts.append(node["description"])
     key = " | ".join(key_parts)
 
+    # object body creation
     if node["type"] == "object":
         properties = node["properties"]
         value = dict([_property_str_visitor(k, v) for k, v in properties.items()])

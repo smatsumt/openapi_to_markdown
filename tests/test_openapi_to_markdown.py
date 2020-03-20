@@ -127,3 +127,43 @@ def test_array_object_property(array_object_property):
       "message | Additional message": "string"
     }
     """).strip()
+
+
+@pytest.fixture()
+def allOf_property():
+    return json.loads(r"""
+    {
+      "message": {
+        "allOf": [
+          {
+            "type": "object",
+            "description": "detailed message 1",
+            "properties": {
+                "p1": {"type": "string"}
+            }
+          },
+          {
+            "type": "object",
+            "description": "detailed message 2",
+            "properties": {
+                "p2": {"type": "string"}
+            }
+          }
+        ]
+      }
+    }
+    """)
+
+
+def test_allOf_property(allOf_property):
+    from openapi_to_markdown.openapi_to_markdown import _property_str
+
+    r = _property_str(allOf_property)
+    assert r == textwrap.dedent("""
+    {
+      "message | detailed message 1 | detailed message 2": {
+        "p1": "string",
+        "p2": "string"
+      }
+    }
+    """).strip()
